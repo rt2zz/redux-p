@@ -12,6 +12,7 @@ export function persistReducer<State: Object, Action: Object>(
   reducer: (State, Action) => State,
   config: Config,
   migrations: MigrationManifest = {},
+  rehydrate: *,
 ) {
   if (process.env.NODE_ENV !== 'production') {
     if (!config.key) throw new Error('key is required in persistor config')
@@ -22,7 +23,7 @@ export function persistReducer<State: Object, Action: Object>(
   let persistor = null
   getStoredState(config, (err, restoredState) => {
     persistor = createPersistor(persistedReducer, config)
-    // store.dispatch(rehydrateAction(restoredState, err, config))
+    rehydrate(restoredState, err, config)
   })
   return persistedReducer
 }

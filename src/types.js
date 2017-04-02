@@ -26,3 +26,12 @@ export type Transform = {
   out: () => {},
   config: Config,
 }
+
+export type RehydrateErrorType = any
+
+export type RehydrateAction = {
+  type: 'redux-p/REHYDRATE',
+  persistorKey: string,
+  payload: ?Object,
+  err: ?RehydrateErrorType,
+}
