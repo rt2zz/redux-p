@@ -1,6 +1,6 @@
 // @flow
 
-import type { Config } from './types'
+import type { Config, Transform } from './types'
 
 import { KEY_PREFIX } from './constants'
 
@@ -20,18 +20,21 @@ export function getStoredState (config: Config, onComplete: Function) {
       onComplete(err)
     }
 
-    try {
-      let state = {}
-      let rawState = deserializer(serialized)
-      Object.keys(rawState).forEach(key => {
-        state[key] = transforms.reduceRight((subState, transformer) => {
-          return transformer.out(subState, key)
-        }, rawState[key])
-      })
-      onComplete(null, state)
-    } catch (err) {
-      if (process.env.NODE_ENV !== 'production') console.error(`redux-persist/getStoredState: Error restoring data ${serialized}`)
-      onComplete(err)
+    if (!serialized) onComplete(null, null)
+    else {
+      try {
+        let state = {}
+        let rawState = deserializer(serialized)
+        Object.keys(rawState).forEach(key => {
+          state[key] = transforms.reduceRight((subState, transformer) => {
+            return transformer.out(subState, key)
+          }, deserializer(rawState[key]))
+        })
+        onComplete(null, state)
+      } catch (err) {
+        if (process.env.NODE_ENV !== 'production') console.error(`redux-persist/getStoredState: Error restoring data ${serialized}`, err)
+        onComplete(err)
+      }
     }
   })
 

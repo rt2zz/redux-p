@@ -23,7 +23,7 @@ export function configurePersist() {
 
     const rehydrate = (restoredState: Object, err: RehydrateErrorType, config: Config) => {
       if (!_store) _rehydrateQueue.push([restoredState, err, config])
-      else _store.dispatch(rehydrate(restoredState, err, config))
+      else _store.dispatch(rehydrateAction(restoredState, err, config))
     }
 
     return persistReducer(reducer, config, migrations, rehydrate)

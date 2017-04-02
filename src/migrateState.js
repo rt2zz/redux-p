@@ -4,8 +4,8 @@ import { DEFAULT_VERSION } from './constants'
 
 import type { Config, MigrationManifest } from './types'
 
-export function migrateState (state: Object, migrations: MigrationManifest, currentVersion: number, { debug }: Config) {
-  let inboundVersion = state.version || DEFAULT_VERSION
+export function migrateState (state: Object = {}, migrations: MigrationManifest, currentVersion: number, { debug }: Config) {
+  let inboundVersion = state && state.version || DEFAULT_VERSION
   if (inboundVersion === currentVersion) {
     if (debug) console.log('redux-persist-state-manager: verions match, noop migration')
     return state

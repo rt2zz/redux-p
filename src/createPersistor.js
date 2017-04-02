@@ -10,7 +10,7 @@ export function createPersistor (store: Object, config: Config) {
   // defaults
   const blacklist: ?Array<string> = config.blacklist || null
   const whitelist: ?Array<string> = config.whitelist || null
-  const transforms: Array<Transform> = config.transforms || []
+  const transforms = config.transforms || []
   const throttle = config.throttle || 0
   const storageKey = `${config.keyPrefix !== undefined ? config.keyPrefix : KEY_PREFIX}${config.key}`
 
@@ -21,20 +21,18 @@ export function createPersistor (store: Object, config: Config) {
   }
 
   // initialize stateful values
-  let lastState = undefined
+  let lastState = {}
   let paused = false
   let keysToProcess = []
   let timeIterator: ?number = null
 
-  store.subscribe(() => {
+  const updateState = (state: Object) => {
     if (paused) return
-
-    let state = store.getState()
 
     Object.keys(state).forEach(key => {
       let subState = state[key]
       if (!passWhitelistBlacklist(key)) return // is keyspace ignored? noop
-      if (lastState && lastState[key] === state[key]) return // value unchanged? noop
+      if (lastState[key] === state[key]) return // value unchanged? noop
       if (keysToProcess.indexOf(key) !== -1) return // is key already queued? noop
       keysToProcess.push(key) // add key to queue
     })
@@ -49,19 +47,21 @@ export function createPersistor (store: Object, config: Config) {
         }
 
         let key = keysToProcess.shift()
-        let endState = transforms.reduce((subState, transformer) => transformer.in(subState, key), store.getState()[key])
+        let endState = transforms.reduce((subState, transformer) => {
+          return transformer.in(subState, key)
+        }, lastState[key])
         if (typeof endState !== 'undefined') stagedWrite(key, endState)
       }, throttle)
     }
 
     lastState = state
-  })
+  }
 
   let stagedState = {}
   function stagedWrite (key: string, endState: any) {
     stagedState[key] = serializer(endState)
     if (keysToProcess.length === 0) {
-      storage.setItem(storageKey, stagedState, onWriteFail)
+      storage.setItem(storageKey, serializer(stagedState), onWriteFail)
     }
   }
 
@@ -82,6 +82,7 @@ export function createPersistor (store: Object, config: Config) {
   return {
     pause: () => { paused = true },
     resume: () => { paused = false },
+    updateState,
   }
 }
 

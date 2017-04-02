@@ -22,9 +22,9 @@ export type PersistState = {
 }
 
 export type Transform = {
-  in: () => {},
-  out: () => {},
-  config: Config,
+  in: (Object, string) => Object,
+  out: (Object, string) => Object,
+  config?: Config,
 }
 
 export type RehydrateErrorType = any

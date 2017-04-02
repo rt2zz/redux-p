@@ -19,8 +19,14 @@ export function persistReducer<State: Object, Action: Object>(
     if (!config.storage) throw new Error('storage is required in persistor config')
     if (!config.version) throw new Error('version is required in persistor config')
   }
-  let persistedReducer = enhanceReducer(reducer, config, migrations)
+
   let persistor = null
+  // @TODO there should be a cleaner / more performant way to do this
+  let postReduceHook = (state: Object) => {
+    if (persistor) persistor.updateState(state)
+    return state
+  }
+  let persistedReducer = enhanceReducer(reducer, config, migrations, postReduceHook)
   getStoredState(config, (err, restoredState) => {
     persistor = createPersistor(persistedReducer, config)
     rehydrate(restoredState, err, config)
@@ -28,7 +34,7 @@ export function persistReducer<State: Object, Action: Object>(
   return persistedReducer
 }
 
-const enhanceReducer = (reducer: Function, config: Config, migrations: MigrationManifest) => {
+const enhanceReducer = (reducer: Function, config: Config, migrations: MigrationManifest, postReduce: (Object) => Object) => {
   const version = config.version || DEFAULT_VERSION
   const debug = config.debug || false
 
@@ -44,7 +50,7 @@ const enhanceReducer = (reducer: Function, config: Config, migrations: Migration
     if (!_persist || version !== _persist.version) workingPersistState = { version, rehydrated: false }
 
     if (action.type === REHYDRATE) {
-      let reducedState = reducer(state, action)
+      let reducedState = reducer(restState, action)
       let inboundState = action.payload
       let migratedInboundState = migrateState(inboundState, migrations, version, config)
       workingPersistState = { ...workingPersistState, rehydrated: true }
@@ -53,10 +59,10 @@ const enhanceReducer = (reducer: Function, config: Config, migrations: Migration
         _persist: workingPersistState,
       }
     } else {
-      return {
+      return postReduce({
         ...reducer(restState, action),
         _persist: workingPersistState,
-      }
+      })
     }
   }
 }
