@@ -2,19 +2,26 @@
 
 import type { Config } from './types'
 
-export function stateReconciler(originalState: Object, inboundState: Object, reducedState: Object, { debug }: Config) {
-
-  if (process.env.NODE_ENV !== 'production') devKeyChecks(originalState, inboundState)
+export function stateReconciler(
+  originalState: Object,
+  inboundState: Object,
+  reducedState: Object,
+  { debug }: Config
+) {
+  if (process.env.NODE_ENV !== 'production')
+    devKeyChecks(originalState, inboundState)
 
   let newState = { ...reducedState, ...inboundState }
 
   if (process.env.NODE_ENV !== 'production' && debug)
-    console.log(`redux-p/stateReconciler: rehydrated keys '${Object.keys(inboundState).join(', ')}'`)
+    console.log(
+      `redux-p/stateReconciler: rehydrated keys '${Object.keys(inboundState).join(', ')}'`
+    )
 
   return newState
 }
 
-function devKeyChecks (originalState: Object, inboundState: Object) {
+function devKeyChecks(originalState: Object, inboundState: Object) {
   Object.keys(inboundState).forEach(key => {
     // check if initialState is missing a key
     if (!originalState.hasOwnProperty(key))
@@ -25,11 +32,14 @@ function devKeyChecks (originalState: Object, inboundState: Object) {
       removed ${key} from your reducer tree, you should write a migration to
       remove ${key} from stored state. If you code-split ${key} reducer, then
       this is the expected behavior.
-    `,
+    `
       )
 
     // check recently added reducer properties that may require a migration
-    if (typeof originalState[key] === 'object' && typeof inboundState[key] === 'object') {
+    if (
+      typeof originalState[key] === 'object' &&
+      typeof inboundState[key] === 'object'
+    ) {
       const stateKeys = Object.keys(originalState[key])
       const inboundStateKeys = Object.keys(inboundState[key])
       stateKeys.forEach(checkKey => {
@@ -41,7 +51,7 @@ function devKeyChecks (originalState: Object, inboundState: Object) {
           rehydration, "${checkKey}" will be null. If you recently added
           ${checkKey} to your ${key} reducer, consider adding ${checkKey} to a
           state migration.
-        `,
+        `
           )
       })
     }

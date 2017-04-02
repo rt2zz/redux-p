@@ -4,7 +4,7 @@ import type { Config, Transform } from './types'
 
 import { KEY_PREFIX } from './constants'
 
-export function getStoredState (config: Config, onComplete: Function) {
+export function getStoredState(config: Config, onComplete: Function) {
   const transforms = config.transforms || []
   const storageKey = `${config.keyPrefix !== undefined ? config.keyPrefix : KEY_PREFIX}${config.key}`
 
@@ -16,23 +16,32 @@ export function getStoredState (config: Config, onComplete: Function) {
 
   storage.getItem(storageKey, (err, serialized) => {
     if (err) {
-      if (process.env.NODE_ENV !== 'production') console.warn('redux-p/getStoredState: Error in storage.get')
+      if (process.env.NODE_ENV !== 'production')
+        console.warn('redux-p/getStoredState: Error in storage.get')
       onComplete(err)
     }
 
-    if (!serialized) onComplete(null, null)
+    if (!serialized)
+      onComplete(null, null)
     else {
       try {
         let state = {}
         let rawState = deserializer(serialized)
         Object.keys(rawState).forEach(key => {
-          state[key] = transforms.reduceRight((subState, transformer) => {
-            return transformer.out(subState, key)
-          }, deserializer(rawState[key]))
+          state[key] = transforms.reduceRight(
+            (subState, transformer) => {
+              return transformer.out(subState, key)
+            },
+            deserializer(rawState[key])
+          )
         })
         onComplete(null, state)
       } catch (err) {
-        if (process.env.NODE_ENV !== 'production') console.error(`redux-persist/getStoredState: Error restoring data ${serialized}`, err)
+        if (process.env.NODE_ENV !== 'production')
+          console.error(
+            `redux-persist/getStoredState: Error restoring data ${serialized}`,
+            err
+          )
         onComplete(err)
       }
     }
@@ -48,6 +57,6 @@ export function getStoredState (config: Config, onComplete: Function) {
   }
 }
 
-function deserializer (serial) {
+function deserializer(serial) {
   return JSON.parse(serial)
 }

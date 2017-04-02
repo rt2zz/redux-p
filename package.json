@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "precommit": "lint-staged",
     "test": "jest"
   },
   "lint-staged": {
@@ -19,7 +20,9 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "babel-eslint": "^7.2.1",
     "eslint": "^3.19.0",
+    "eslint-plugin-flowtype": "^2.30.4",
     "eslint-plugin-import": "^2.2.0",
     "flow-bin": "^0.42.0",
     "husky": "^0.13.3",

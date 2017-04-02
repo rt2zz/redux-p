@@ -5,8 +5,7 @@ import stringify from 'json-stringify-safe'
 
 import type { Config, Transform } from './types'
 
-export function createPersistor (store: Object, config: Config) {
-
+export function createPersistor(store: Object, config: Config) {
   // defaults
   const blacklist: ?Array<string> = config.blacklist || null
   const whitelist: ?Array<string> = config.whitelist || null
@@ -39,67 +38,81 @@ export function createPersistor (store: Object, config: Config) {
 
     // time iterator (read: throttle)
     if (timeIterator === null) {
-      timeIterator = setInterval(() => {
-        if (keysToProcess.length === 0) {
-          if (timeIterator) clearInterval(timeIterator)
-          timeIterator = null
-          return
-        }
+      timeIterator = setInterval(
+        () => {
+          if (keysToProcess.length === 0) {
+            if (timeIterator) clearInterval(timeIterator)
+            timeIterator = null
+            return
+          }
 
-        let key = keysToProcess.shift()
-        let endState = transforms.reduce((subState, transformer) => {
-          return transformer.in(subState, key)
-        }, lastState[key])
-        if (typeof endState !== 'undefined') stagedWrite(key, endState)
-      }, throttle)
+          let key = keysToProcess.shift()
+          let endState = transforms.reduce(
+            (subState, transformer) => {
+              return transformer.in(subState, key)
+            },
+            lastState[key]
+          )
+          if (typeof endState !== 'undefined') stagedWrite(key, endState)
+        },
+        throttle
+      )
     }
 
     lastState = state
   }
 
   let stagedState = {}
-  function stagedWrite (key: string, endState: any) {
+  function stagedWrite(key: string, endState: any) {
     stagedState[key] = serializer(endState)
     if (keysToProcess.length === 0) {
       storage.setItem(storageKey, serializer(stagedState), onWriteFail)
     }
   }
 
-  function passWhitelistBlacklist (key) {
+  function passWhitelistBlacklist(key) {
     if (whitelist && whitelist.indexOf(key) === -1) return false
     if (blacklist && blacklist.indexOf(key) !== -1) return false
     return true
   }
 
-  function onWriteFail () {
-    return function setError (err) {
+  function onWriteFail() {
+    return function setError(err) {
       // @TODO add fail handlers (typically storage full)
-      if (err && process.env.NODE_ENV !== 'production') { console.error('Error storing data', err) }
+      if (err && process.env.NODE_ENV !== 'production') {
+        console.error('Error storing data', err)
+      }
     }
   }
 
   // return `persistor`
   return {
-    pause: () => { paused = true },
-    resume: () => { paused = false },
+    pause: () => {
+      paused = true
+    },
+    resume: () => {
+      paused = false
+    },
     updateState,
   }
 }
 
-function serializer (data) {
+function serializer(data) {
   return stringify(data, null, null, (k, v) => {
     if (process.env.NODE_ENV !== 'production') {
-      throw new Error(`
+      throw new Error(
+        `
         redux-persist: cannot process cyclical state.
         Consider changing your state structure to have no cycles.
         Alternatively blacklist the corresponding reducer key.
         Cycle encounted at key "${k}" with value "${v}".
-      `)
+      `
+      )
     }
     return null
   })
 }
 
-function deserializer (serial) {
+function deserializer(serial) {
   return JSON.parse(serial)
 }
