@@ -33,6 +33,10 @@ const enhanceReducer = (reducer: Function, config: Config, migrations: Migration
   const debug = config.debug || false
 
   return (state: Object, action: Object) => {
+    /* @TODO add validation / handling for:
+        - persisting a reducer which has nested _persist
+        - handling actions that fire before reydrate is called
+    */
     if (reducer._persist) throw new Error('source reducer cannot already contain _persist key')
     let { _persist, ...restState } = state || {}
 

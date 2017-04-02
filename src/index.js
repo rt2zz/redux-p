@@ -4,33 +4,42 @@ import type { Config, MigrationManifest, RehydrateAction, RehydrateErrorType } f
 
 import { persistReducer } from './persistReducer'
 import { REHYDRATE } from './constants'
+import { curry } from './utils/curry'
 
 type PendingRehydrate = [Object, RehydrateErrorType, Config]
+type Persist = <R>(Config, MigrationManifest) => (R) => R
+type CreatePersistor = (Object) => void
 
-export function createPersist(store: Object) {
+// @TODO get proper curried types working
+export function configurePersist() {
   let _registry: { [key: string]: Config } = {}
   let _rehydrateQueue: Array<PendingRehydrate> = []
   let _store = null
-  return {
-    persist: (reducer: Function, config: Config, migrations: MigrationManifest) => {
-      if (process.env.NODE_ENV !== 'production' && _registry[config.key]) console.error(`persistor with key '${config.key}' is already registered`)
-      _registry[config.key] = config
 
-      const rehydrate = (restoredState: Object, err: RehydrateErrorType, config: Config) => {
-        if (!_store) _rehydrateQueue.push([restoredState, err, config])
-        else _store.dispatch(rehydrate(restoredState, err, config))
-      }
+  // $FlowFixMe
+  const persist: Persist = curry((config: Config, migrations: MigrationManifest, reducer: <S, A>(S, A) => S) => {
+    if (process.env.NODE_ENV !== 'production' && _registry[config.key]) console.error(`persistor with key '${config.key}' is already registered`)
+    _registry[config.key] = config
 
-      return persistReducer(reducer, config, migrations, rehydrate)
-    },
-    enablePersistence: (store: Object) => {
-      _store = store
-      let pendingRehydrate = _rehydrateQueue.shift()
-      while (pendingRehydrate) {
-        _store.dispatch(rehydrateAction(...pendingRehydrate))
-        pendingRehydrate = _rehydrateQueue.shift()
-      }
+    const rehydrate = (restoredState: Object, err: RehydrateErrorType, config: Config) => {
+      if (!_store) _rehydrateQueue.push([restoredState, err, config])
+      else _store.dispatch(rehydrate(restoredState, err, config))
     }
+
+    return persistReducer(reducer, config, migrations, rehydrate)
+  })
+  const createPersistor: CreatePersistor = (store: Object) => {
+    _store = store
+    let pendingRehydrate = _rehydrateQueue.shift()
+    while (pendingRehydrate) {
+      _store.dispatch(rehydrateAction(...pendingRehydrate))
+      pendingRehydrate = _rehydrateQueue.shift()
+    }
+  }
+
+  return {
+    persist,
+    createPersistor,
   }
 }
 
