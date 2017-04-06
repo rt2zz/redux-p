@@ -1,6 +1,6 @@
 // @flow
 
-export type Config = {
+export type PersistConfig = {
   version: number,
   storage: Object,
   key: string,
@@ -10,6 +10,7 @@ export type Config = {
   whitelist?: Array<string>,
   transforms?: Array<Transform>,
   throttle?: number,
+  noAutoRehydrate?: boolean,
 };
 
 export type MigrationManifest = {};
@@ -22,7 +23,7 @@ export type PersistState = {
 export type Transform = {
   in: (Object, string) => Object,
   out: (Object, string) => Object,
-  config?: Config,
+  config?: PersistConfig,
 };
 
 export type RehydrateErrorType = any;

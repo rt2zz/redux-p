@@ -1,7 +1,7 @@
 // @flow
 
 import type {
-  Config,
+  PersistConfig,
   MigrationManifest,
   RehydrateAction,
   RehydrateErrorType,
@@ -11,19 +11,19 @@ import { persistReducer } from './persistReducer'
 import { REHYDRATE } from './constants'
 import { curry } from './utils/curry'
 
-type PendingRehydrate = [Object, RehydrateErrorType, Config];
-type Persist = <R>(Config, MigrationManifest) => (R) => R;
+type PendingRehydrate = [Object, RehydrateErrorType, PersistConfig];
+type Persist = <R>(PersistConfig, MigrationManifest) => (R) => R;
 type CreatePersistor = (Object) => void;
 
 // @TODO get proper curried types working
 export function configurePersist() {
-  let _registry: { [key: string]: Config } = {}
+  let _registry: { [key: string]: PersistConfig } = {}
   let _rehydrateQueue: Array<PendingRehydrate> = []
   let _store = null
 
   // $FlowFixMe
   const persist: Persist = curry(
-    (config: Config, migrations: MigrationManifest, reducer: <S, A>(
+    (config: PersistConfig, migrations: MigrationManifest, reducer: <S, A>(
       S,
       A
     ) => S) => {
@@ -36,7 +36,7 @@ export function configurePersist() {
       const rehydrate = (
         restoredState: Object,
         err: RehydrateErrorType,
-        config: Config
+        config: PersistConfig
       ) => {
         if (!_store) _rehydrateQueue.push([restoredState, err, config])
         else _store.dispatch(rehydrateAction(restoredState, err, config))
@@ -63,7 +63,7 @@ export function configurePersist() {
 function rehydrateAction(
   payload: ?Object,
   err: ?RehydrateErrorType,
-  config: Config
+  config: PersistConfig
 ): RehydrateAction {
   return {
     type: REHYDRATE,

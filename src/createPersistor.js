@@ -3,9 +3,9 @@
 import { KEY_PREFIX, REHYDRATE } from './constants'
 import stringify from 'json-stringify-safe'
 
-import type { Config, Transform } from './types'
+import type { PersistConfig, Transform } from './types'
 
-export function createPersistor(store: Object, config: Config) {
+export function createPersistor(store: Object, config: PersistConfig) {
   // defaults
   const blacklist: ?Array<string> = config.blacklist || null
   const whitelist: ?Array<string> = config.whitelist || null

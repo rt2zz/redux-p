@@ -1,12 +1,12 @@
 // @flow
 
-import type { Config } from './types'
+import type { PersistConfig } from './types'
 
 export function stateReconciler(
   originalState: Object,
   inboundState: Object,
   reducedState: Object,
-  { debug }: Config
+  { debug }: PersistConfig
 ) {
   if (process.env.NODE_ENV !== 'production')
     devKeyChecks(originalState, inboundState)

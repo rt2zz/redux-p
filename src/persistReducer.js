@@ -1,7 +1,7 @@
 // @flow
 import { REHYDRATE, DEFAULT_VERSION } from './constants'
 
-import type { Config, MigrationManifest, PersistState } from './types'
+import type { PersistConfig, MigrationManifest, PersistState } from './types'
 
 import { migrateState } from './migrateState'
 import { stateReconciler } from './stateReconciler'
@@ -10,7 +10,7 @@ import { getStoredState } from './getStoredState'
 
 export function persistReducer<State: Object, Action: Object>(
   reducer: (State, Action) => State,
-  config: Config,
+  config: PersistConfig,
   migrations: MigrationManifest = {},
   rehydrate: *
 ) {
@@ -24,7 +24,7 @@ export function persistReducer<State: Object, Action: Object>(
 
   let persistor = null
   // @TODO there should be a cleaner / more performant way to do this
-  let postReduceHook = (state: Object) => {
+  let postReduce = (state: Object) => {
     if (persistor) persistor.updateState(state)
     return state
   }
@@ -32,7 +32,7 @@ export function persistReducer<State: Object, Action: Object>(
     reducer,
     config,
     migrations,
-    postReduceHook
+    postReduce
   )
   getStoredState(config, (err, restoredState) => {
     persistor = createPersistor(persistedReducer, config)
@@ -43,7 +43,7 @@ export function persistReducer<State: Object, Action: Object>(
 
 const enhanceReducer = (
   reducer: Function,
-  config: Config,
+  config: PersistConfig,
   migrations: MigrationManifest,
   postReduce: (Object) => Object
 ) => {
@@ -63,7 +63,7 @@ const enhanceReducer = (
     if (!_persist || version !== _persist.version)
       workingPersistState = { version, rehydrated: false }
 
-    if (action.type === REHYDRATE) {
+    if (action.type === REHYDRATE && !config.noAutoRehydrate) {
       let reducedState = reducer(restState, action)
       let inboundState = action.payload
       let migratedInboundState = migrateState(

@@ -2,13 +2,13 @@
 
 import { DEFAULT_VERSION } from './constants'
 
-import type { Config, MigrationManifest } from './types'
+import type { PersistConfig, MigrationManifest } from './types'
 
 export function migrateState(
   state: Object = {},
   migrations: MigrationManifest,
   currentVersion: number,
-  { debug }: Config
+  { debug }: PersistConfig
 ) {
   let inboundVersion = (state && state.version) || DEFAULT_VERSION
   if (inboundVersion === currentVersion) {

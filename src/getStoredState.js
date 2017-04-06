@@ -1,10 +1,10 @@
 // @flow
 
-import type { Config, Transform } from './types'
+import type { PersistConfig, Transform } from './types'
 
 import { KEY_PREFIX } from './constants'
 
-export function getStoredState(config: Config, onComplete: Function) {
+export function getStoredState(config: PersistConfig, onComplete: Function) {
   const transforms = config.transforms || []
   const storageKey = `${config.keyPrefix !== undefined ? config.keyPrefix : KEY_PREFIX}${config.key}`
 
