@@ -63,7 +63,11 @@ const enhanceReducer = (
     if (!_persist || version !== _persist.version)
       workingPersistState = { version, rehydrated: false }
 
-    if (action.type === REHYDRATE && !config.noAutoRehydrate) {
+    if (
+      action.type === REHYDRATE &&
+      action.key === config.key &&
+      !config.noAutoRehydrate
+    ) {
       let reducedState = reducer(restState, action)
       let inboundState = action.payload
       let migratedInboundState = migrateState(

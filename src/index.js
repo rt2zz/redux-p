@@ -67,7 +67,7 @@ function rehydrateAction(
 ): RehydrateAction {
   return {
     type: REHYDRATE,
-    persistorKey: config.key,
+    key: config.key,
     payload,
     err,
   }

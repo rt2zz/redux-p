@@ -30,7 +30,7 @@ export type RehydrateErrorType = any;
 
 export type RehydrateAction = {
   type: 'redux-p/REHYDRATE',
-  persistorKey: string,
+  key: string,
   payload: ?Object,
   err: ?RehydrateErrorType,
 };
