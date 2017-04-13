@@ -22,6 +22,7 @@ export function stateReconciler(
 }
 
 function devKeyChecks(originalState: Object, inboundState: Object) {
+  if (!inboundState) return
   Object.keys(inboundState).forEach(key => {
     // check if initialState is missing a key
     if (!originalState.hasOwnProperty(key))
