@@ -2,12 +2,12 @@
 
 import type { PersistConfig } from './types'
 
-export function stateReconciler(
-  originalState: Object,
-  inboundState: Object,
-  reducedState: Object,
+export function stateReconciler<State: Object>(
+  originalState: State,
+  inboundState: State,
+  reducedState: State,
   { debug }: PersistConfig
-) {
+): State {
   if (process.env.NODE_ENV !== 'production')
     devKeyChecks(originalState, inboundState)
 

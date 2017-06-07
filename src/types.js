@@ -34,3 +34,7 @@ export type RehydrateAction = {
   payload: ?Object,
   err: ?RehydrateErrorType,
 };
+
+export type Persistoid = {
+  update: (Object) => void,
+};
