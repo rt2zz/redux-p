@@ -6,33 +6,44 @@
   "scripts": {
     "build": "cross-env BABEL_ENV=es babel src --out-dir es",
     "precommit": "lint-staged",
-    "test": "jest"
+    "test": "ava"
   },
   "lint-staged": {
     "src/**/*.js": [
-      "prettier --single-quote --trailing-comma --parser=flow --write",
+      "prettier --no-semi --single-quote --trailing-comma --parser=flow --write",
       "git add"
     ]
   },
-  "jest": {
-    "rootDir": "src"
-  },
   "author": "",
   "license": "MIT",
+  "ava": {
+    "files": [
+      "tests/**/*.js"
+    ],
+    "require": [
+      "babel-register"
+    ],
+    "babel": "inherit"
+  },
   "devDependencies": {
+    "ava": "^0.19.1",
     "babel-eslint": "^7.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-env": "^1.5.2",
     "babel-preset-flow": "^6.23.0",
+    "babel-register": "^6.24.1",
     "cross-env": "^5.0.1",
     "eslint": "^3.19.0",
     "eslint-plugin-flowtype": "^2.30.4",
     "eslint-plugin-import": "^2.2.0",
     "flow-bin": "^0.42.0",
     "husky": "^0.13.3",
-    "jest": "^19.0.2",
     "lint-staged": "^3.4.0",
-    "prettier": "^1.4.4"
+    "lodash": "^4.17.4",
+    "prettier": "^1.4.4",
+    "redux": "^3.6.0",
+    "redux-mock-store": "^1.2.3",
+    "sinon": "^2.3.2"
   },
   "peerDependencies": {
     "redux": ">3.0.0"

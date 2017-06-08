@@ -31,17 +31,14 @@ export function migrateState(
 
   if (debug)
     console.log('redux-persist-state-manager: migrationKeys', migrationKeys)
-  let migratedState = migrationKeys.reduce(
-    (state, versionKey) => {
-      if (debug)
-        console.log(
-          'redux-persist-state-manager: running migration for versionKey',
-          versionKey
-        )
-      return migrations[versionKey](state)
-    },
-    state
-  )
+  let migratedState = migrationKeys.reduce((state, versionKey) => {
+    if (debug)
+      console.log(
+        'redux-persist-state-manager: running migration for versionKey',
+        versionKey
+      )
+    return migrations[versionKey](state)
+  }, state)
 
   return migratedState
 }

@@ -11,7 +11,9 @@ export function createPersistoid(store: Object, config: PersistConfig) {
   const whitelist: ?Array<string> = config.whitelist || null
   const transforms = config.transforms || []
   const throttle = config.throttle || 0
-  const storageKey = `${config.keyPrefix !== undefined ? config.keyPrefix : KEY_PREFIX}${config.key}`
+  const storageKey = `${config.keyPrefix !== undefined
+    ? config.keyPrefix
+    : KEY_PREFIX}${config.key}`
 
   // storage with keys -> getAllKeys for localForage support
   let storage = config.storage
@@ -38,25 +40,19 @@ export function createPersistoid(store: Object, config: PersistConfig) {
 
     // time iterator (read: throttle)
     if (timeIterator === null) {
-      timeIterator = setInterval(
-        () => {
-          if (keysToProcess.length === 0) {
-            if (timeIterator) clearInterval(timeIterator)
-            timeIterator = null
-            return
-          }
+      timeIterator = setInterval(() => {
+        if (keysToProcess.length === 0) {
+          if (timeIterator) clearInterval(timeIterator)
+          timeIterator = null
+          return
+        }
 
-          let key = keysToProcess.shift()
-          let endState = transforms.reduce(
-            (subState, transformer) => {
-              return transformer.in(subState, key)
-            },
-            lastState[key]
-          )
-          if (typeof endState !== 'undefined') stagedWrite(key, endState)
-        },
-        throttle
-      )
+        let key = keysToProcess.shift()
+        let endState = transforms.reduce((subState, transformer) => {
+          return transformer.in(subState, key)
+        }, lastState[key])
+        if (typeof endState !== 'undefined') stagedWrite(key, endState)
+      }, throttle)
     }
 
     lastState = state
@@ -64,8 +60,10 @@ export function createPersistoid(store: Object, config: PersistConfig) {
 
   let stagedState = {}
   function stagedWrite(key: string, endState: any) {
+    console.log('staged write', key, keysToProcess.length)
     stagedState[key] = serializer(endState)
     if (keysToProcess.length === 0) {
+      console.log('set', stagedState)
       storage.setItem(storageKey, serializer(stagedState), onWriteFail)
     }
   }

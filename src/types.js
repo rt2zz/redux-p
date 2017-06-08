@@ -11,30 +11,30 @@ export type PersistConfig = {
   transforms?: Array<Transform>,
   throttle?: number,
   noAutoRehydrate?: boolean,
-};
+}
 
-export type MigrationManifest = {};
+export type MigrationManifest = {}
 
 export type PersistState = {
   version: number,
   rehydrated: boolean,
-};
+}
 
 export type Transform = {
   in: (Object, string) => Object,
   out: (Object, string) => Object,
   config?: PersistConfig,
-};
+}
 
-export type RehydrateErrorType = any;
+export type RehydrateErrorType = any
 
 export type RehydrateAction = {
   type: 'redux-p/REHYDRATE',
   key: string,
   payload: ?Object,
   err: ?RehydrateErrorType,
-};
+}
 
 export type Persistoid = {
-  update: (Object) => void,
-};
+  update: Object => void,
+}

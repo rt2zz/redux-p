@@ -1,16 +1,15 @@
 {
+  "plugins": ["transform-object-rest-spread"],
+  "presets": [
+    "flow",
+    ["env", {
+      "modules": "commonjs",
+      "targets": {
+        "browsers": ["last 2 versions"]
+      }
+    }]
+  ],
   "env": {
-    "commonjs": {
-      "plugins": ["transform-object-rest-spread"],
-      "presets": [
-        "flow",
-        ["env", {
-          "targets": {
-            "browsers": ["last 2 versions"]
-          }
-        }]
-      ]
-    },
     "es": {
       "plugins": ["transform-object-rest-spread"],
       "presets": [

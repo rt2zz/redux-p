@@ -6,7 +6,9 @@ import { KEY_PREFIX } from './constants'
 
 export function getStoredState(config: PersistConfig, onComplete: Function) {
   const transforms = config.transforms || []
-  const storageKey = `${config.keyPrefix !== undefined ? config.keyPrefix : KEY_PREFIX}${config.key}`
+  const storageKey = `${config.keyPrefix !== undefined
+    ? config.keyPrefix
+    : KEY_PREFIX}${config.key}`
 
   // storage with keys -> getAllKeys for localForage support
   let storage = config.storage
@@ -21,19 +23,15 @@ export function getStoredState(config: PersistConfig, onComplete: Function) {
       onComplete(err)
     }
 
-    if (!serialized)
-      onComplete(null, null)
+    if (!serialized) onComplete(null, null)
     else {
       try {
         let state = {}
         let rawState = deserializer(serialized)
         Object.keys(rawState).forEach(key => {
-          state[key] = transforms.reduceRight(
-            (subState, transformer) => {
-              return transformer.out(subState, key)
-            },
-            deserializer(rawState[key])
-          )
+          state[key] = transforms.reduceRight((subState, transformer) => {
+            return transformer.out(subState, key)
+          }, deserializer(rawState[key]))
         })
         onComplete(null, state)
       } catch (err) {
