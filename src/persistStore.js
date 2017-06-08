@@ -15,9 +15,6 @@ type PendingRehydrate = [Object, RehydrateErrorType, PersistConfig]
 type Persist = <R>(PersistConfig, MigrationManifest) => R => R
 type CreatePersistor = Object => void
 
-// singleton used for performance, does not work with SSR
-let _pendingPersists = []
-
 const initialState = {
   registry: [],
   bootstrapped: false,

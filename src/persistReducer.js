@@ -38,7 +38,10 @@ export function persistReducer<State: Object, Action: Object>(
 
   // $FlowFixMe perhaps there is a better way to do this?
   let defaultState = baseReducer(undefined, { type: 'redux-p/default-probe' })
-
+  if (process.env.NODE_ENV !== 'production') {
+    if (Array.isArray(defaultState) || typeof defaultState !== 'object')
+      console.error('redux-p: does not yet support non plain object state.')
+  }
   return (state: State = defaultState, action: Action) => {
     let { _persist, ...rest } = state || {}
     let restState: State = rest
@@ -65,7 +68,8 @@ export function persistReducer<State: Object, Action: Object>(
 
         getStoredState(config, (err, restoredState) => {
           _persistoid = createPersistoid(baseReducer, config)
-          action.rehydrate(config.key, restoredState, err)
+          // @NOTE setTimeout 0 to ensure that we do not dispatch sync before this reduction completes
+          setTimeout(() => action.rehydrate(config.key, restoredState, err), 0)
         })
 
         return { ...state, _persist: { version, rehydrated: false } }
@@ -88,6 +92,7 @@ export function persistReducer<State: Object, Action: Object>(
             reducedState,
             config
           )
+
           return {
             ...reconciledRest,
             _persist: { ..._persist, rehydrated: true },

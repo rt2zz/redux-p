@@ -60,10 +60,8 @@ export function createPersistoid(store: Object, config: PersistConfig) {
 
   let stagedState = {}
   function stagedWrite(key: string, endState: any) {
-    console.log('staged write', key, keysToProcess.length)
     stagedState[key] = serializer(endState)
     if (keysToProcess.length === 0) {
-      console.log('set', stagedState)
       storage.setItem(storageKey, serializer(stagedState), onWriteFail)
     }
   }
