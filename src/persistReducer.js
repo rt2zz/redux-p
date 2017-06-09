@@ -1,57 +1,111 @@
 // @flow
-import { REHYDRATE, DEFAULT_VERSION } from './constants'
+import { PERSIST, REHYDRATE, DEFAULT_VERSION } from './constants'
 
-import type { Config, MigrationManifest, PersistState } from './types'
+import type {
+  PersistConfig,
+  MigrationManifest,
+  PersistState,
+  Persistoid,
+} from './types'
 
 import { migrateState } from './migrateState'
 import { stateReconciler } from './stateReconciler'
-import { createPersistor } from './createPersistor'
+import { createPersistoid } from './createPersistoid'
 import { getStoredState } from './getStoredState'
 
+type PersistPartial = { _persist: PersistState }
+/* 
+  @TODO add validation / handling for:
+  - persisting a reducer which has nested _persist
+  - handling actions that fire before reydrate is called
+*/
 export function persistReducer<State: Object, Action: Object>(
-  reducer: (State, Action) => State,
-  config: Config,
+  config: PersistConfig,
   migrations: MigrationManifest = {},
-) {
+  baseReducer: (State, Action) => State
+): (State, Action) => State & PersistPartial {
   if (process.env.NODE_ENV !== 'production') {
     if (!config.key) throw new Error('key is required in persistor config')
-    if (!config.storage) throw new Error('storage is required in persistor config')
-    if (!config.version) throw new Error('version is required in persistor config')
+    if (!config.storage)
+      throw new Error('storage is required in persistor config')
+    if (!config.version)
+      throw new Error('version is required in persistor config')
   }
-  let persistedReducer = enhanceReducer(reducer, config, migrations)
-  let persistor = null
-  getStoredState(config, (err, restoredState) => {
-    persistor = createPersistor(persistedReducer, config)
-    // store.dispatch(rehydrateAction(restoredState, err, config))
-  })
-  return persistedReducer
-}
 
-const enhanceReducer = (reducer: Function, config: Config, migrations: MigrationManifest) => {
   const version = config.version || DEFAULT_VERSION
   const debug = config.debug || false
+  let _persistoid = null
 
-  return (state: Object, action: Object) => {
-    if (reducer._persist) throw new Error('source reducer cannot already contain _persist key')
-    let { _persist, ...restState } = state || {}
+  // $FlowFixMe perhaps there is a better way to do this?
+  let defaultState = baseReducer(undefined, { type: 'redux-p/default-probe' })
+  if (process.env.NODE_ENV !== 'production') {
+    if (Array.isArray(defaultState) || typeof defaultState !== 'object')
+      console.error('redux-p: does not yet support non plain object state.')
+  }
+  return (state: State = defaultState, action: Action) => {
+    let { _persist, ...rest } = state || {}
+    let restState: State = rest
 
-    let workingPersistState: ?PersistState = _persist
-    if (!_persist || version !== _persist.version) workingPersistState = { version, rehydrated: false }
+    switch (action.type) {
+      case PERSIST:
+        if (state._persist) {
+          console.warn(
+            'redux-p: unexpected _persist state before PERSIST action is handled. If you are doing hmr or code-splitting this may be a valid use case. Please open a ticket, requires further review.'
+          )
+          return state
+        }
+        if (typeof action.rehydrate !== 'function')
+          throw new Error(
+            'redux-p: action.rehydrate is not a function. This can happen if the action is being replayed. This is an unexplored use case, please open an issue and we will figure out a resolution.'
+          )
+        if (typeof action.register !== 'function')
+          throw new Error(
+            'redux-p: action.register is not a function. This can happen if the action is being replayed. This is an unexplored use case, please open an issue and we will figure out a resolution.'
+          )
 
-    if (action.type === REHYDRATE) {
-      let reducedState = reducer(state, action)
-      let inboundState = action.payload
-      let migratedInboundState = migrateState(inboundState, migrations, version, config)
-      workingPersistState = { ...workingPersistState, rehydrated: true }
-      return {
-        ...stateReconciler(state, migratedInboundState, reducedState, config),
-        _persist: workingPersistState,
-      }
-    } else {
-      return {
-        ...reducer(restState, action),
-        _persist: workingPersistState,
-      }
+        let rehydrate = action.rehydrate
+        action.register(config.key)
+
+        getStoredState(config, (err, restoredState) => {
+          _persistoid = createPersistoid(baseReducer, config)
+          // @NOTE setTimeout 0 to ensure that we do not dispatch sync before this reduction completes
+          setTimeout(() => action.rehydrate(config.key, restoredState, err), 0)
+        })
+
+        return { ...state, _persist: { version, rehydrated: false } }
+
+      case REHYDRATE:
+        // @NOTE if key does not match, will continue to default case
+        if (action.key === config.key) {
+          let reducedState = baseReducer(restState, action)
+          let inboundState = action.payload
+          let migratedInboundState = migrateState(
+            inboundState,
+            migrations,
+            version,
+            config
+          )
+          // $FlowFixMe: not sure what the deal is here
+          let reconciledRest: State = stateReconciler(
+            state,
+            migratedInboundState,
+            reducedState,
+            config
+          )
+
+          return {
+            ...reconciledRest,
+            _persist: { ..._persist, rehydrated: true },
+          }
+        }
+
+      default:
+        let newState = {
+          ...baseReducer(restState, action),
+          _persist,
+        }
+        _persistoid && _persistoid.update(newState)
+        return newState
     }
   }
 }

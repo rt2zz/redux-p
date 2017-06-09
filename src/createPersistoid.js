@@ -3,16 +3,17 @@
 import { KEY_PREFIX, REHYDRATE } from './constants'
 import stringify from 'json-stringify-safe'
 
-import type { Config, Transform } from './types'
+import type { PersistConfig, Transform } from './types'
 
-export function createPersistor (store: Object, config: Config) {
-
+export function createPersistoid(store: Object, config: PersistConfig) {
   // defaults
   const blacklist: ?Array<string> = config.blacklist || null
   const whitelist: ?Array<string> = config.whitelist || null
-  const transforms: Array<Transform> = config.transforms || []
+  const transforms = config.transforms || []
   const throttle = config.throttle || 0
-  const storageKey = `${config.keyPrefix !== undefined ? config.keyPrefix : KEY_PREFIX}${config.key}`
+  const storageKey = `${config.keyPrefix !== undefined
+    ? config.keyPrefix
+    : KEY_PREFIX}${config.key}`
 
   // storage with keys -> getAllKeys for localForage support
   let storage = config.storage
@@ -21,20 +22,18 @@ export function createPersistor (store: Object, config: Config) {
   }
 
   // initialize stateful values
-  let lastState = undefined
+  let lastState = {}
   let paused = false
   let keysToProcess = []
   let timeIterator: ?number = null
 
-  store.subscribe(() => {
+  const update = (state: Object) => {
     if (paused) return
-
-    let state = store.getState()
 
     Object.keys(state).forEach(key => {
       let subState = state[key]
       if (!passWhitelistBlacklist(key)) return // is keyspace ignored? noop
-      if (lastState && lastState[key] === state[key]) return // value unchanged? noop
+      if (lastState[key] === state[key]) return // value unchanged? noop
       if (keysToProcess.indexOf(key) !== -1) return // is key already queued? noop
       keysToProcess.push(key) // add key to queue
     })
@@ -49,56 +48,67 @@ export function createPersistor (store: Object, config: Config) {
         }
 
         let key = keysToProcess.shift()
-        let endState = transforms.reduce((subState, transformer) => transformer.in(subState, key), store.getState()[key])
+        let endState = transforms.reduce((subState, transformer) => {
+          return transformer.in(subState, key)
+        }, lastState[key])
         if (typeof endState !== 'undefined') stagedWrite(key, endState)
       }, throttle)
     }
 
     lastState = state
-  })
+  }
 
   let stagedState = {}
-  function stagedWrite (key: string, endState: any) {
+  function stagedWrite(key: string, endState: any) {
     stagedState[key] = serializer(endState)
     if (keysToProcess.length === 0) {
-      storage.setItem(storageKey, stagedState, onWriteFail)
+      storage.setItem(storageKey, serializer(stagedState), onWriteFail)
     }
   }
 
-  function passWhitelistBlacklist (key) {
+  function passWhitelistBlacklist(key) {
     if (whitelist && whitelist.indexOf(key) === -1) return false
     if (blacklist && blacklist.indexOf(key) !== -1) return false
     return true
   }
 
-  function onWriteFail () {
-    return function setError (err) {
+  function onWriteFail() {
+    return function setError(err) {
       // @TODO add fail handlers (typically storage full)
-      if (err && process.env.NODE_ENV !== 'production') { console.error('Error storing data', err) }
+      if (err && process.env.NODE_ENV !== 'production') {
+        console.error('Error storing data', err)
+      }
     }
   }
 
   // return `persistor`
   return {
-    pause: () => { paused = true },
-    resume: () => { paused = false },
+    pause: () => {
+      paused = true
+    },
+    resume: () => {
+      paused = false
+    },
+    update,
   }
 }
 
-function serializer (data) {
+function serializer(data) {
   return stringify(data, null, null, (k, v) => {
     if (process.env.NODE_ENV !== 'production') {
-      throw new Error(`
+      throw new Error(
+        `
         redux-persist: cannot process cyclical state.
         Consider changing your state structure to have no cycles.
         Alternatively blacklist the corresponding reducer key.
         Cycle encounted at key "${k}" with value "${v}".
-      `)
+      `
+      )
     }
     return null
   })
 }
 
-function deserializer (serial) {
+function deserializer(serial) {
   return JSON.parse(serial)
 }
