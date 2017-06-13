@@ -1,7 +1,9 @@
 // @flow
 
-let noStorage = () => () => {
-  /* noop */ return null
+import type { Storage } from '../types'
+
+let noStorage = (type: string) => (a: any) => {
+  /* noop */ return undefined
 }
 
 if (process.env.NODE_ENV !== 'production') {
@@ -39,7 +41,7 @@ function hasStorage(storageType) {
   return true
 }
 
-export default function getStorage(type: string) {
+export default function getStorage(type: string): Storage {
   const storageType = `${type}Storage`
   if (hasStorage(storageType)) return window[storageType]
 
