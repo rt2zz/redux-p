@@ -36,7 +36,7 @@ export type Transform = {
 export type RehydrateErrorType = any
 
 export type RehydrateAction = {
-  type: 'persist/REHYDRATE',
+  type: 'redux-p/REHYDRATE',
   key: string,
   payload: ?Object,
   err: ?RehydrateErrorType,
@@ -47,7 +47,7 @@ export type Persistoid = {
 }
 
 type RegisterAction = {
-  type: 'persist/REGISTER',
+  type: 'redux-p/REGISTER',
   key: string,
 }
 
@@ -58,10 +58,10 @@ type PersistorState = {
   bootstrapped: boolean,
 }
 
-type PersistorSubscribeCallback = PersistorState => void
+type PersistorSubscribeCallback = () => void
 
 export type Persistor = {
-  dispatch: PersistorAction => PersistorAction,
-  getState: () => PersistorState,
-  subscribe: PersistorSubscribeCallback => () => void,
+  +dispatch: PersistorAction => PersistorAction,
+  +getState: () => PersistorState,
+  +subscribe: PersistorSubscribeCallback => () => void,
 }
