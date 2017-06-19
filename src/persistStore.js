@@ -9,7 +9,7 @@ import type {
 
 import { createStore } from 'redux'
 import { persistReducer } from './persistReducer'
-import { PERSIST, REGISTER, REHYDRATE } from './constants'
+import { PERSIST, PURGE, REGISTER, REHYDRATE } from './constants'
 
 type PendingRehydrate = [Object, RehydrateErrorType, PersistConfig]
 type Persist = <R>(PersistConfig, MigrationManifest) => R => R
@@ -36,6 +36,11 @@ const persistorReducer = (state = initialState, action) => {
 
 export const persistStore = (store: Object) => {
   let persistor = createStore(persistorReducer, undefined)
+  persistor.purge = () => {
+    store.dispatch({
+      type: PURGE,
+    })
+  }
 
   let register = (key: string) => {
     persistor.dispatch({

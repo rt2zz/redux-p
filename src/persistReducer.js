@@ -1,5 +1,5 @@
 // @flow
-import { PERSIST, REHYDRATE, DEFAULT_VERSION } from './constants'
+import { PERSIST, PURGE, REHYDRATE, DEFAULT_VERSION } from './constants'
 
 import type {
   PersistConfig,
@@ -12,6 +12,7 @@ import { migrateState } from './migrateState'
 import { stateReconciler } from './stateReconciler'
 import { createPersistoid } from './createPersistoid'
 import { getStoredState } from './getStoredState'
+import { purgeStoredState } from './purgeStoredState'
 
 type PersistPartial = { _persist: PersistState }
 /* 
@@ -35,6 +36,7 @@ export function persistReducer<State: Object, Action: Object>(
   const version = config.version || DEFAULT_VERSION
   const debug = config.debug || false
   let _persistoid = null
+  let _purge = false
 
   // $FlowFixMe perhaps there is a better way to do this?
   let defaultState = baseReducer(undefined, { type: 'redux-p/default-probe' })
@@ -75,6 +77,9 @@ export function persistReducer<State: Object, Action: Object>(
         return { ...state, _persist: { version, rehydrated: false } }
 
       case REHYDRATE:
+        // noop if purging
+        if (_purge) return state
+
         // @NOTE if key does not match, will continue to default case
         if (action.key === config.key) {
           let reducedState = baseReducer(restState, action)
@@ -98,6 +103,11 @@ export function persistReducer<State: Object, Action: Object>(
             _persist: { ..._persist, rehydrated: true },
           }
         }
+
+      case PURGE:
+        _purge = true
+        purgeStoredState(config)
+        return state
 
       default:
         let newState = {
